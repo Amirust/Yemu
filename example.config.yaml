@@ -1,0 +1,6 @@
+yemu_port: 3072
+yemu_address: 'localhost'
+http_enabled: true
+http_port: 3073
+registration_required: true
+db_path: 'db.json'
