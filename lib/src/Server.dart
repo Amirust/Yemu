@@ -4,6 +4,7 @@ import 'package:yaml/yaml.dart';
 import 'package:yemu/src/Client.dart';
 import 'package:yemu/src/ClientRequest.dart';
 import 'package:yemu/src/LocalDb.dart';
+import 'package:yemu/src/responses/Accepted.dart';
 import 'package:yemu/src/responses/UserAdd.dart';
 import 'package:yemu/src/responses/UserMessage.dart';
 import 'package:yemu/src/responses/UserRemove.dart';
@@ -12,8 +13,8 @@ import 'ServerResponse.dart';
 import 'HTTPServer.dart';
 
 class Server {
-  late final net;
-  late final http;
+  late final void net;
+  late final HTTPServer http;
   YamlMap config;
   LocalDb db;
   Map<String, Client> clients = {};
@@ -65,7 +66,8 @@ class Server {
     clients[client.id] = client;
     ServerResponse response = UserAdd(client.username, clients.values.map((e) => e.username).toList());
     broadcast(response.toJson());
-    client.send(ServerResponse.fromType(ResponseTypes.Accepted).toJson());
+    ServerResponse accepted = Accepted(config['http_enabled'] ? config['http_port'] : null);
+    client.send(accepted.toJson());
   }
 
   void handleUserMessageRequest(Socket socket, UserMessageData data) {
@@ -91,7 +93,7 @@ class Server {
       });
       callback();
     });
-    http = HTTPServer(db, address, config['http_port']);
+    http = HTTPServer(db, clients, address, config['http_port']);
     config['http_enabled'] ? http.start(address, config['http_port'], httpCallback) : null;
   }
 }
