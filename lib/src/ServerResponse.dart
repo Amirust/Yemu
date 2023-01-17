@@ -16,7 +16,7 @@ class ServerResponse implements Response<Object> {
   toJson() {
     return jsonEncode({
       'type': type.index,
-      'data': jsonEncode(data),
+      'data': data,
     });
   }
 
