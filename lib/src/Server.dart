@@ -4,11 +4,9 @@ import 'package:yaml/yaml.dart';
 import 'package:yemu/src/Client.dart';
 import 'package:yemu/src/ClientRequest.dart';
 import 'package:yemu/src/LocalDb.dart';
-import 'package:yemu/src/responses/Accepted.dart';
-import 'package:yemu/src/responses/UserAdd.dart';
-import 'package:yemu/src/responses/UserMessage.dart';
+import 'package:yemu/src/instructions/handleAuthRequest.dart';
+import 'package:yemu/src/instructions/handleUserMessageRequest.dart';
 import 'package:yemu/src/responses/UserRemove.dart';
-import 'package:yemu/src/types/ResponseTypes.dart';
 import 'ServerResponse.dart';
 import 'HTTPServer.dart';
 
@@ -22,63 +20,40 @@ class Server {
   Server(this.config, this.db);
 
   void handleConnection(SecureSocket socket) {
-    socket.listen((Uint8List data) {
-      ClientRequest request = ClientRequest(data);
-      try {
-        ResovableData parsed = request.parse();
-        if (parsed is AuthData) handleAuthRequest(socket, parsed);
-        if (parsed is UserMessageData) handleUserMessageRequest(socket, parsed);
-      } catch (e) {
+    try {
+      socket.listen((Uint8List data) {
+        ClientRequest request = ClientRequest(data);
+        try {
+          ResovableData parsed = request.parse();
+          if (parsed is AuthData) handleAuthRequest(this, socket, parsed);
+          if (parsed is UserMessageData) handleUserMessageRequest(this, socket, parsed);
+        } catch (e) {
+          print(e);
+        }
+      }, onDone: () {
+        Client client = clients.values.firstWhere((element) =>
+        element.socket.remoteAddress.address == socket.remoteAddress.address);
+        print('Client ${client?.username ?? 'NO USERNAME'} disconnected');
+        if (client != null) {
+          client.socket.close();
+          clients.remove(client.id);
+          ServerResponse response = UserRemove(client.username);
+          broadcast(response.toJson());
+        }
+      }, onError: (e) {
         print(e);
-      }
-    }, onDone: () {
-      Client client = clients.values.firstWhere((element) => element.socket.remoteAddress.address == socket.remoteAddress.address);
-      print('Client ${client?.username ?? 'NO USERNAME'} disconnected');
-      if (client != null) {
-        client.socket.close();
-        clients.remove(client.id);
-        ServerResponse response = UserRemove(client.username);
-        broadcast(response.toJson());
-      }
-    }, onError: (e) {
+        Client client = clients.values.firstWhere((element) =>
+        element.socket.remoteAddress.address == socket.remoteAddress.address);
+        if (client != null) {
+          client.socket.close();
+          clients.remove(client.id);
+          ServerResponse response = UserRemove(client.username);
+          broadcast(response.toJson());
+        }
+      });
+    } catch (e) {
       print(e);
-      Client client = clients.values.firstWhere((element) => element.socket.remoteAddress.address == socket.remoteAddress.address);
-      if (client != null) {
-        client.socket.close();
-        clients.remove(client.id);
-        ServerResponse response = UserRemove(client.username);
-        broadcast(response.toJson());
-      }
-    });
-  }
-
-  void handleAuthRequest(Socket socket, AuthData data) {
-    Client client = Client(data.username, socket);
-    if (clients.containsKey(client.id)) {
-      client.send(ErrorResponse.fromType(ResponseTypes.AlreadyConnected).toJson());
     }
-    for (Client client in clients.values) {
-      if (client.socket.remoteAddress.address == socket.remoteAddress.address) {
-        client.send(ErrorResponse.fromType(ResponseTypes.AlreadyConnected).toJson());
-        break;
-      }
-    }
-    clients[client.id] = client;
-    ServerResponse response = UserAdd(client.username, clients.values.map((e) => e.username).toList());
-    broadcast(response.toJson());
-    ServerResponse accepted = Accepted(config['http_enabled'] ? config['http_port'] : null);
-    client.send(accepted.toJson());
-    print('Client ${client.username} connected');
-  }
-
-  void handleUserMessageRequest(Socket socket, UserMessageData data) {
-    Client client = clients.values.firstWhere((element) => element.socket.remoteAddress.address == socket.remoteAddress.address);
-    if (client == null) {
-      client.send(ErrorResponse.fromType(ResponseTypes.UserNotFound).toJson());
-      return;
-    }
-    ServerResponse response = UserMessage(client.username, data.message);
-    broadcast(response.toJson());
   }
 
   Future<void> broadcast(message) async {
@@ -97,7 +72,7 @@ class Server {
       });
       callback();
     });
-    http = HTTPServer(db, clients, address, config['http_port']);
+    http = HTTPServer(db, clients, context, address, config['http_port']);
     config['http_enabled'] ? http.start(address, config['http_port'], httpCallback) : null;
   }
 }

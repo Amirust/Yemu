@@ -11,8 +11,8 @@ class HTTPServer {
   Map<String, Client> clients;
   Map<String, dynamic> db;
 
-  HTTPServer(this._db, this.clients, address, port) : db = _db.read() {
-    final app = Jaguar(port: port, address: address);
+  HTTPServer(this._db, this.clients, securityContext, address, port) : db = _db.read() {
+    final app = Jaguar(port: port, address: address, securityContext: securityContext);
 
     app.get('/images/:image', (ctx) async {
       if (ctx.pathParams['image'] == null) return Response(statusCode: 404, body: 'Image not found');
