@@ -21,7 +21,7 @@ class Server {
 
   Server(this.config, this.db);
 
-  void handleConnection(Socket socket) {
+  void handleConnection(SecureSocket socket) {
     socket.listen((Uint8List data) {
       ClientRequest request = ClientRequest(data);
       try {
@@ -92,7 +92,7 @@ class Server {
     context.useCertificateChain(config['cert_path']);
     context.usePrivateKey(config['key_path']);
     net = SecureServerSocket.bind(address, port, context).then((SecureServerSocket server) {
-      server.listen((Socket socket) {
+      server.listen((SecureSocket socket) {
         handleConnection(socket);
       });
       callback();
