@@ -13,7 +13,7 @@ import 'ServerResponse.dart';
 import 'HTTPServer.dart';
 
 class Server {
-  late final void net;
+  late final net;
   late final HTTPServer http;
   YamlMap config;
   LocalDb db;
@@ -68,6 +68,7 @@ class Server {
     broadcast(response.toJson());
     ServerResponse accepted = Accepted(config['http_enabled'] ? config['http_port'] : null);
     client.send(accepted.toJson());
+    print('Client ${client.username} connected');
   }
 
   void handleUserMessageRequest(Socket socket, UserMessageData data) {
@@ -87,7 +88,10 @@ class Server {
   }
 
   void start(String address, int port, Function callback, Function httpCallback) {
-    net = ServerSocket.bind(address, port).then((ServerSocket server) {
+    SecurityContext context = SecurityContext();
+    context.useCertificateChain(config['cert_path']);
+    context.usePrivateKey(config['key_path']);
+    net = SecureServerSocket.bind(address, port, context).then((SecureServerSocket server) {
       server.listen((Socket socket) {
         handleConnection(socket);
       });
