@@ -4,5 +4,3 @@ http_enabled: true
 http_port: 3073
 registration_required: true
 db_path: 'db.json'
-cert_path: 'server.crt'
-key_path: 'server.key'

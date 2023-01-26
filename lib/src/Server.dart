@@ -19,7 +19,7 @@ class Server {
 
   Server(this.config, this.db);
 
-  void handleConnection(SecureSocket socket) {
+  void handleConnection( socket) {
     try {
       socket.listen((Uint8List data) {
         ClientRequest request = ClientRequest(data);
@@ -63,16 +63,13 @@ class Server {
   }
 
   void start(String address, int port, Function callback, Function httpCallback) {
-    SecurityContext context = SecurityContext();
-    context.useCertificateChain(config['cert_path']);
-    context.usePrivateKey(config['key_path']);
-    net = SecureServerSocket.bind(address, port, context).then((SecureServerSocket server) {
-      server.listen((SecureSocket socket) {
+    net = ServerSocket.bind(address, port).then((ServerSocket server) {
+      server.listen((Socket socket) {
         handleConnection(socket);
       });
       callback();
     });
-    http = HTTPServer(db, clients, context, address, config['http_port']);
+    http = HTTPServer(db, clients, address, config['http_port']);
     config['http_enabled'] ? http.start(address, config['http_port'], httpCallback) : null;
   }
 }
