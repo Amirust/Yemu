@@ -2,9 +2,9 @@ import '../ServerResponse.dart';
 import '../types/ResponseTypes.dart';
 
 class Accepted extends ServerResponse {
-  Accepted(httpPort, String publicKey)
+  Accepted(httpEnabled, httpPort, httpHost, String publicKey)
       : super(ResponseTypes.Accepted, {
-        'httpPort': httpPort,
+        'http': httpEnabled ? '${httpHost}${httpPort == null || httpPort == 80 || httpPort == 443 ? '' : ':$httpPort'}' : null,
         'publicKey': publicKey,
       });
 }

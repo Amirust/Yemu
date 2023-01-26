@@ -41,7 +41,7 @@ class AuthData extends ResovableData {
 class UserMessageData extends ResovableData {
   final String message;
 
-  UserMessageData(message) : message = utf8.decode(message.codeUnits);
+  UserMessageData(this.message);
 }
 
 class ClientRequest {
@@ -60,6 +60,7 @@ class ClientRequest {
         return AuthData(json.data['username'], json.data['password'], json.data['serverPassword'], json.data['publicKey']);
       case RequestTypes.UserMessage:
         if (json.data['message'] == null) throw Exception('USER_MESSAGE: No message');
+        print(json.data['message']);
         return UserMessageData(json.data['message']);
       default:
         throw Exception('Unknown request type');

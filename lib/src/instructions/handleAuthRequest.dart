@@ -23,7 +23,12 @@ void handleAuthRequest(Server server, Socket socket, AuthData data) {
     }
   }
   server.clients[client.id] = client;
-  ServerResponse accepted = Accepted(server.config['http_enabled'] ? server.config['http_port'] : null, server.dhEngine.publicKey.toRadixString(16));
+  ServerResponse accepted = Accepted(
+      server.config['http_enabled'],
+      server.config['http_port'],
+      server.config['http_address'],
+      server.dhEngine.publicKey.toRadixString(16)
+  );
   client.send(accepted.toJson(), false);
   ServerResponse response = UserAdd(client.username, server.clients.values.map((e) => e.username).toList());
   server.broadcast(response.toJson());
