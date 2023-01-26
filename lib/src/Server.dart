@@ -38,7 +38,7 @@ class Server {
           if (e.toString().startsWith('Exception: AUTH')) {
             socket.write(ErrorResponse(ResponseTypes.AuthDataInvalid, e.toString()).toJson());
           }
-          if (e.toString().contains('Exception: USER_MESSAGE')) {
+          if (e.toString().startsWith('Exception: USER_MESSAGE')) {
             socket.write(ErrorResponse.fromType(ResponseTypes.MessageDataInvalid).toJson());
           }
           print(e);
