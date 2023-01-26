@@ -35,10 +35,10 @@ class Server {
           if (parsed is AuthData) handleAuthRequest(this, socket, parsed);
           if (parsed is UserMessageData) handleUserMessageRequest(this, socket, parsed);
         } catch (e) {
-          if (e.toString().contains('AUTH')) {
+          if (e.toString().startsWith('Exception: AUTH')) {
             socket.write(ErrorResponse(ResponseTypes.AuthDataInvalid, e.toString()).toJson());
           }
-          if (e.toString().contains('USER_MESSAGE')) {
+          if (e.toString().contains('Exception: USER_MESSAGE')) {
             socket.write(ErrorResponse.fromType(ResponseTypes.MessageDataInvalid).toJson());
           }
           print(e);
