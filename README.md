@@ -1,11 +1,12 @@
-### TLS Чат, Сервер на дарте
+### TCP Чат, Сервер на дарте
 Не спрашивайте, мне просто нечего делать
 
 ### Чета типа документации
 Для начала делаем `mv example.config.yaml config.yaml` и заполняем его <br>
 Дальше пишем `dart run` и все
 
-Типы запроса / ответа **TCP СОКЕТ**
+#### Типы запроса / ответа
+**TCP СОКЕТ**
 ```dart
 // Ответы сервера
 enum ResponseTypes {
@@ -17,12 +18,14 @@ enum ResponseTypes {
   UserNotFound,         // 5, { type: 5, data: '' }
   UserMessage,          // 6, { type: 6, data: { user: '', message: '' } }
   UserAdd,              // 7, { type: 7, data: { user: '', allUsers: [''] } } allUsers - все пользователи в чате, массив никнеймов
-  UserRemove            // 8, { type: 8, data: { user: '' }
+  UserRemove,           // 8, { type: 8, data: { user: '' }
+  AuthDataInvalid,      // 9, { type: 9, data: '' }
+  MessageDataInvalid,   // 10, { type: 10, data: '' }
 }
 
 // Запросы клиента
 enum RequestTypes {
-  Auth,        // 0, { type: 0, data: { username: '', password: '' } } password можно не передавать если сервер без регистрации (registration_required: false в конфиге)
+  Auth,        // 0, { type: 0, data: { username: '', password: '', publicKey: '' } } password можно не передавать если сервер без регистрации (registration_required: false в конфиге)
   UserMessage, // 1, { type: 1, data: { message: '' } }
 }
 ```
@@ -47,10 +50,11 @@ Form data:
 ```
 
 ### Хрень
-Ликуйте пока я не добавил шифрование, будет разрыв очка боль <br>
+Будешь писать клиент, вот тебе хуйня:
+1. Шифрование построено на AES256 в CTR режиме, вектор инициализации - массив байтов длиной 16 байтов заполненых нулями, шифруется с помощью публичного ключа диффи-хеллмана, который передается вместе с запросом на авторизацию, дальше обрезается до 32 символов и уже обрезанный юзается для шифрования
 
 ### Todo
-- [X] Шифрование
+- [X] Шифрование (AES + Diffie-Hellman)
 - [ ] Регистрация
 - [ ] Клиент на флаттере (фронтенд говно ааа)
 - [ ] Требование пароля для смены аватарки

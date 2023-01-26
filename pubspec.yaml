@@ -12,7 +12,9 @@ dev_dependencies:
   lints: ^2.0.0
 dependencies:
   crypto: ^3.0.2
-  encrypt: ^5.0.1
   jaguar: ^3.1.3
-  pointycastle: ^3.6.2
   yaml: ^3.1.1
+  cryptography: ^2.0.5
+  diffie_hellman:
+    git: https://github.com/Amirust/diffie_hellman
+  collection: ^1.17.0

@@ -1,8 +1,9 @@
 import 'dart:typed_data';
-import 'package:encrypt/encrypt.dart';
-import 'package:pointycastle/asymmetric/api.dart';
 import 'package:yemu/src/types/RequestTypes.dart';
 import 'dart:convert';
+
+import '../yemu.dart';
+import 'Client.dart';
 
 abstract class ResolvedData<T> {
   late final RequestTypes type;
@@ -32,8 +33,9 @@ class AuthData extends ResovableData {
   final String username;
   final String? password;
   final String? serverPassword;
+  final String publicKey;
 
-  AuthData(username, password, serverPassword) : username = utf8.decode(username.codeUnits), password = password, serverPassword = serverPassword;
+  AuthData(username, this.password, this.serverPassword, this.publicKey) : username = utf8.decode(username.codeUnits);
 }
 
 class UserMessageData extends ResovableData {
@@ -44,17 +46,20 @@ class UserMessageData extends ResovableData {
 
 class ClientRequest {
   late String message;
+  Server server;
 
-  ClientRequest(Uint8List data) : message = String.fromCharCodes(data);
+  ClientRequest(Uint8List data, this.server) : message = utf8.decode(data);
 
-  ResovableData parse() {
+  Future<ResovableData> parse(Client? client) async {
+    if (client != null) message = await client.decrypt(message);
     final json = ResolvedJsonData.fromJson(jsonDecode(message));
     switch (json.type) {
       case RequestTypes.Auth:
-        if (json.data['username'] == null) throw Exception('Invalid auth data');
-        return AuthData(json.data['username'], json.data['password'], json.data['serverPassword']);
+        if (json.data['username'] == null) throw Exception('AUTH: No username');
+        if (json.data['publicKey'] == null) throw Exception('AUTH: No public key');
+        return AuthData(json.data['username'], json.data['password'], json.data['serverPassword'], json.data['publicKey']);
       case RequestTypes.UserMessage:
-        if (json.data['message'] == null) throw Exception('Invalid user message data');
+        if (json.data['message'] == null) throw Exception('USER_MESSAGE: No message');
         return UserMessageData(json.data['message']);
       default:
         throw Exception('Unknown request type');
