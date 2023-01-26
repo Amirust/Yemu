@@ -15,19 +15,39 @@ void handleAuthRequest(Server server, Socket socket, AuthData data) {
   Client client = Client(data.username, socket, secretKey);
   if (server.clients.containsKey(client.id)) {
     client.send(ErrorResponse.fromType(ResponseTypes.AlreadyConnected).toJson(), false);
+    socket.close();
+    return;
   }
   for (Client client in server.clients.values) {
     if (client.socket.remoteAddress.address == socket.remoteAddress.address) {
-      client.send(ErrorResponse.fromType(ResponseTypes.AlreadyConnected).toJson(), false);
+      client.send(
+          ErrorResponse.fromType(ResponseTypes.AlreadyConnected).toJson(),
+          false);
       break;
     }
   }
+
+  if (server.config['registration_required'] == true && (server.db.read()['users'][client.username] == null)) {
+    client.send(ErrorResponse.fromType(ResponseTypes.UserNotRegistered).toJson(), false);
+    socket.close();
+    return;
+  }
+  if (data.password == null && server.config['registration_required'] == true) {
+    client.send(ErrorResponse.fromType(ResponseTypes.UserPasswordRequired).toJson(), false);
+    return;
+  }
+  if (server.config['registration_required'] == true && server.db.read()['users'][client.username]['password'] != data.password) {
+    client.send(ErrorResponse.fromType(ResponseTypes.InvalidPassword).toJson(), false);
+    return;
+  }
+
   server.clients[client.id] = client;
   ServerResponse accepted = Accepted(
       server.config['http_enabled'],
       server.config['http_port'],
       server.config['http_address'],
-      server.dhEngine.publicKey.toRadixString(16)
+      server.dhEngine.publicKey.toRadixString(16),
+      client.generateAccessToken()
   );
   client.send(accepted.toJson(), false);
   ServerResponse response = UserAdd(client.username, server.clients.values.map((e) => e.username).toList());

@@ -11,6 +11,8 @@ enum ResponseTypes {
   UserRemove,
   AuthDataInvalid,
   MessageDataInvalid,
+  UpdateAccessToken,
+  UserNotRegistered
 }
 
 const Map<ResponseTypes, String> ResponseDescription = {
@@ -25,4 +27,6 @@ const Map<ResponseTypes, String> ResponseDescription = {
   ResponseTypes.UserRemove: 'User remove',
   ResponseTypes.AuthDataInvalid: 'Auth data invalid',
   ResponseTypes.MessageDataInvalid: 'Message data invalid',
+  ResponseTypes.UpdateAccessToken: 'Update access token',
+  ResponseTypes.UserNotRegistered: 'User not registered'
 };

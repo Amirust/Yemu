@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:collection/collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:jaguar/jaguar.dart';
 import 'package:yemu/src/Client.dart';
@@ -14,7 +15,24 @@ class HTTPServer {
   HTTPServer(this._db, this.clients, address, port) : db = _db.read() {
     final app = Jaguar(port: port, address: address);
 
+    app.post('/register', (ctx) async {
+      final json = await ctx.bodyAsJsonMap();
+      if (json['username'] == null || json['password'] == null) return Response(statusCode: 400, body: 'Bad request');
+      String username = json['username'];
+      String password = json['password'];
+      if (db['users'][username] != null) return Response(statusCode: 400, body: 'User already exists');
+      db['users'][username] = {};
+      db['users'][username]['password'] = password;
+      _db.write();
+      return Response(statusCode: 200, body: 'User created');
+    });
+
     app.get('/images/:image', (ctx) async {
+      Client? client = checkAccessToken(ctx);
+      if (client == null) {
+        return Response(statusCode: 401, body: 'Unauthorized');
+      }
+
       if (ctx.pathParams['image'] == null) return Response(statusCode: 404, body: 'Image not found');
       String image = ctx.pathParams.get('image')!;
       File file = File('images/$image');
@@ -25,6 +43,11 @@ class HTTPServer {
     });
 
     app.post('/images', (ctx) async {
+      Client? client = checkAccessToken(ctx);
+      if (client == null) {
+        return Response(statusCode: 401, body: 'Unauthorized');
+      }
+
       final form = await ctx.bodyAsFormData();
       if (form['username'] == null || form['image'] == null) return Response(statusCode: 400, body: 'Bad request');
       StringFormField username = form['username']! as StringFormField;
@@ -40,6 +63,11 @@ class HTTPServer {
     });
 
     app.get('/user/:username/avatar', (ctx) async {
+      Client? client = checkAccessToken(ctx);
+      if (client == null) {
+        return Response(statusCode: 401, body: 'Unauthorized');
+      }
+
       if (db['users'][ctx.pathParams['username']] == null) {
         return Response(statusCode: 404, body: 'User not found');
       }
@@ -50,6 +78,14 @@ class HTTPServer {
     });
 
     app.post('/user/:username/avatar', (ctx) async {
+      Client? client = checkAccessToken(ctx);
+      if (client == null) {
+        return Response(statusCode: 401, body: 'Unauthorized');
+      }
+      if (client.username != ctx.pathParams['username']) {
+        return Response(statusCode: 403, body: 'Forbidden');
+      }
+
       BinaryFileFormField file;
       try {
         file = (await ctx.bodyAsFormData()).values.firstWhere((element) => element.name == 'avatar') as BinaryFileFormField;
@@ -76,6 +112,15 @@ class HTTPServer {
     });
 
     this.app = app;
+  }
+
+  Client? checkAccessToken(ctx) {
+    if (ctx.headers['Authorization'] == null) {
+      return null;
+    }
+    String token = ctx.headers['Authorization'];
+    Client? client = clients.values.firstWhereOrNull((value) => value.accessToken == token);
+    return client;
   }
 
   void start(String address, int port, Function onStarted) async {

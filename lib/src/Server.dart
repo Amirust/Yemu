@@ -80,7 +80,9 @@ class Server {
       });
       callback();
     });
+    if (config['http_enabled'] == false) return;
+
     http = HTTPServer(db, clients, address, config['http_port']);
-    config['http_enabled'] ? http.start(address, config['http_port'], httpCallback) : null;
+    http.start(address, config['http_port'], httpCallback);
   }
 }

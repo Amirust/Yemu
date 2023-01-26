@@ -1,16 +1,31 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:cryptography/cryptography.dart';
+import 'dart:math';
+
+import 'package:yemu/src/ServerResponse.dart';
+import 'package:yemu/src/types/ResponseTypes.dart';
 
 class Client {
   String username;
   Socket socket;
   SecretKey secretKey;
   late String id;
+  late String accessToken;
 
   Client(this.username, this.socket, this.secretKey) {
    id = md5.convert(utf8.encode(username)).toString();
+   Timer.periodic(Duration(seconds: 10 * 60), (timer) {
+     send(ServerResponse(ResponseTypes.UpdateAccessToken, {'accessToken': generateAccessToken()}).toJson());
+   });
+  }
+
+  String generateAccessToken() {
+    List<int> bytes = List.generate(8, (index) => Random().nextInt(256));
+    accessToken = base64.encode(bytes) + base64.encode(sha1.convert(utf8.encode(username)).bytes);
+    return accessToken;
   }
 
   Future<String> encrypt(String message) async {
