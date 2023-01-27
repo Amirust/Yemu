@@ -1,4 +1,5 @@
 enum ResponseTypes {
+  Handshake,
   Accepted,
   AuthRequired,
   UserPasswordRequired,
@@ -12,10 +13,13 @@ enum ResponseTypes {
   AuthDataInvalid,
   MessageDataInvalid,
   UpdateAccessToken,
-  UserNotRegistered
+  UserNotRegistered,
+  HandshakeRequired,
+  HandshakeDataInvalid,
 }
 
 const Map<ResponseTypes, String> ResponseDescription = {
+  ResponseTypes.Handshake: 'Handshake',
   ResponseTypes.Accepted: 'Accepted',
   ResponseTypes.AuthRequired: 'Auth required',
   ResponseTypes.UserPasswordRequired: 'User password required',
@@ -28,5 +32,7 @@ const Map<ResponseTypes, String> ResponseDescription = {
   ResponseTypes.AuthDataInvalid: 'Auth data invalid',
   ResponseTypes.MessageDataInvalid: 'Message data invalid',
   ResponseTypes.UpdateAccessToken: 'Update access token',
-  ResponseTypes.UserNotRegistered: 'User not registered'
+  ResponseTypes.UserNotRegistered: 'User not registered',
+  ResponseTypes.HandshakeRequired: 'Handshake required',
+  ResponseTypes.HandshakeDataInvalid: 'Handshake data invalid',
 };

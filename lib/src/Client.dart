@@ -9,17 +9,20 @@ import 'package:yemu/src/ServerResponse.dart';
 import 'package:yemu/src/types/ResponseTypes.dart';
 
 class Client {
-  String username;
+  late String username;
   Socket socket;
   SecretKey secretKey;
   late String id;
   late String accessToken;
 
-  Client(this.username, this.socket, this.secretKey) {
-   id = md5.convert(utf8.encode(username)).toString();
-   Timer.periodic(Duration(seconds: 10 * 60), (timer) {
+  Client(this.username, this.socket, this.secretKey) : id = md5.convert(socket.remoteAddress.address.toString().codeUnits).toString() {
+   Timer.periodic(Duration(minutes: 10), (timer) {
      send(ServerResponse(ResponseTypes.UpdateAccessToken, {'accessToken': generateAccessToken()}).toJson());
    });
+  }
+
+  factory Client.fromHandshake(Socket socket, SecretKey secretKey) {
+    return Client('', socket, secretKey);
   }
 
   String generateAccessToken() {

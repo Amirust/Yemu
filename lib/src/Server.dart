@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:collection/collection.dart';
+import 'package:crypto/crypto.dart';
 import 'dart:typed_data';
 import 'package:diffie_hellman/diffie_hellman.dart';
 import 'package:yaml/yaml.dart';
@@ -12,6 +13,7 @@ import 'package:yemu/src/responses/UserRemove.dart';
 import 'package:yemu/src/types/ResponseTypes.dart';
 import 'ServerResponse.dart';
 import 'HTTPServer.dart';
+import 'instructions/handleHandshake.dart';
 
 class Server {
   late final void net;
@@ -30,16 +32,25 @@ class Server {
       socket.listen((Uint8List data) async {
         ClientRequest request = ClientRequest(data, this);
         try {
-          Client? client = clients.values.firstWhereOrNull((element) => element.socket.remoteAddress.address == socket.remoteAddress.address);
+          String id = md5.convert(socket.remoteAddress.address.toString().codeUnits).toString();
+          Client? client = clients[id];
           ResovableData parsed = await request.parse(client);
-          if (parsed is AuthData) handleAuthRequest(this, socket, parsed);
-          if (parsed is UserMessageData) handleUserMessageRequest(this, socket, parsed);
+          if (parsed is HandshakeData) return handleHandshakeRequest(this, socket, parsed);
+          if (client == null) throw Exception('REQUIRED_HANDSHAKE');
+          if (parsed is AuthData) return handleAuthRequest(client, this, parsed);
+          if (parsed is UserMessageData) return handleUserMessageRequest(this, socket, parsed);
         } catch (e) {
           if (e.toString().startsWith('Exception: AUTH')) {
             socket.write(ErrorResponse(ResponseTypes.AuthDataInvalid, e.toString()).toJson());
           }
           if (e.toString().startsWith('Exception: USER_MESSAGE')) {
             socket.write(ErrorResponse.fromType(ResponseTypes.MessageDataInvalid).toJson());
+          }
+          if (e.toString().startsWith('Exception: HANDSHAKE')) {
+            socket.write(ErrorResponse.fromType(ResponseTypes.HandshakeDataInvalid).toJson());
+          }
+          if (e.toString().startsWith('Exception: REQUIRED_HANDSHAKE')) {
+            socket.write(ErrorResponse.fromType(ResponseTypes.HandshakeRequired).toJson());
           }
           print(e);
         }

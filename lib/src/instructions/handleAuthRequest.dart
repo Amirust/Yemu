@@ -1,5 +1,3 @@
-import 'dart:io';
-import 'package:cryptography/cryptography.dart';
 import 'package:yemu/src/Client.dart';
 import 'package:yemu/src/ClientRequest.dart';
 import 'package:yemu/src/responses/Accepted.dart';
@@ -9,44 +7,39 @@ import 'package:yemu/src/ServerResponse.dart';
 import '../../yemu.dart';
 
 
-void handleAuthRequest(Server server, Socket socket, AuthData data) {
-  BigInt key = BigInt.parse(data.publicKey, radix: 16);
-  SecretKey secretKey = SecretKey(server.dhEngine.computeSecretKey(key).toRadixString(16).substring(0, 32).codeUnits);
-  Client client = Client(data.username, socket, secretKey);
-  if (server.clients.containsKey(client.id)) {
-    client.send(ErrorResponse.fromType(ResponseTypes.AlreadyConnected).toJson(), false);
-    socket.close();
-    return;
-  }
-  for (Client client in server.clients.values) {
-    if (client.socket.remoteAddress.address == socket.remoteAddress.address) {
+void handleAuthRequest(Client client, Server server, AuthData data) {
+  for (Client clientIter in server.clients.values) {
+    if (clientIter.username == data.username) {
       client.send(
           ErrorResponse.fromType(ResponseTypes.AlreadyConnected).toJson(),
           false);
+      client.socket.close();
       break;
     }
   }
 
+  server.clients[client.id]?.username = data.username;
+
   if (server.config['registration_required'] == true && (server.db.read()['users'][client.username] == null)) {
     client.send(ErrorResponse.fromType(ResponseTypes.UserNotRegistered).toJson(), false);
-    socket.close();
+    client.socket.close();
     return;
   }
   if (data.password == null && server.config['registration_required'] == true) {
     client.send(ErrorResponse.fromType(ResponseTypes.UserPasswordRequired).toJson(), false);
+    server.clients[client.id]?.username = ''; // Just dont ask lmao
     return;
   }
   if (server.config['registration_required'] == true && server.db.read()['users'][client.username]['password'] != data.password) {
     client.send(ErrorResponse.fromType(ResponseTypes.InvalidPassword).toJson(), false);
+    server.clients[client.id]?.username = '';
     return;
   }
 
-  server.clients[client.id] = client;
   ServerResponse accepted = Accepted(
       server.config['http_enabled'],
       server.config['http_port'],
       server.config['http_address'],
-      server.dhEngine.publicKey.toRadixString(16),
       client.generateAccessToken()
   );
   client.send(accepted.toJson(), false);

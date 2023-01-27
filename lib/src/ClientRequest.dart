@@ -29,13 +29,18 @@ class ResolvedJsonData<T> implements ResolvedData<T> {
 
 abstract class ResovableData {}
 
+class HandshakeData extends ResovableData {
+  final String publicKey;
+
+  HandshakeData(this.publicKey);
+}
+
 class AuthData extends ResovableData {
   final String username;
   final String? password;
   final String? serverPassword;
-  final String publicKey;
 
-  AuthData(username, this.password, this.serverPassword, this.publicKey) : username = utf8.decode(username.codeUnits);
+  AuthData(username, this.password, this.serverPassword) : username = utf8.decode(username.codeUnits);
 }
 
 class UserMessageData extends ResovableData {
@@ -54,10 +59,12 @@ class ClientRequest {
     if (client != null) message = await client.decrypt(message);
     final json = ResolvedJsonData.fromJson(jsonDecode(message));
     switch (json.type) {
+      case RequestTypes.Handshake:
+        if (json.data['publicKey'] == null) throw Exception('HANDSHAKE: No public key');
+        return HandshakeData(json.data['publicKey']);
       case RequestTypes.Auth:
         if (json.data['username'] == null) throw Exception('AUTH: No username');
-        if (json.data['publicKey'] == null) throw Exception('AUTH: No public key');
-        return AuthData(json.data['username'], json.data['password'], json.data['serverPassword'], json.data['publicKey']);
+        return AuthData(json.data['username'], json.data['password'], json.data['serverPassword']);
       case RequestTypes.UserMessage:
         if (json.data['message'] == null) throw Exception('USER_MESSAGE: No message');
         print(json.data['message']);
