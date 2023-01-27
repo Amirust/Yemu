@@ -72,7 +72,7 @@ class HTTPServer {
         return Response(statusCode: 404, body: 'User not found');
       }
       if (db['users'][ctx.pathParams['username']]['avatar'] == null) {
-        return Response(statusCode: 404, body: 'User not found');
+        return Response(statusCode: 404, body: 'User not have avatar');
       }
       return StreamResponse.fromFile(File(db['users'][ctx.pathParams['username']]['avatar']));
     });
