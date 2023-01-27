@@ -10,7 +10,7 @@
 ```dart
 // Ответы сервера
 enum ResponseTypes {
-  Accepted,             // 0, { type: 0, data: { http: 'address:port / address / domain / null', publicKey: 'Ключ диффи-хелмана в хексе' } }
+  Accepted,             // 0, { type: 0, data: { http: 'address:port / address / domain / null', publicKey: 'Ключ диффи-хелмана в хексе', accessToken: 'Ключ HTTP доступа' } }
   AuthRequired,         // 1, { type: 1, data: '' }
   UserPasswordRequired, // 2, { type: 2, data: '' }
   InvalidPassword,      // 3, { type: 3, data: '' }
