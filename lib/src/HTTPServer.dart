@@ -96,7 +96,7 @@ class HTTPServer {
         return Response(statusCode: 404, body: 'User not found');
       }
       if (!(file.contentType?.mimeType ?? '').startsWith('image/')) {
-        return Response(statusCode: 400, body: 'Invalid file type');
+        return Response(statusCode: 415, body: 'Invalid file type');
       }
       if (db['users'][ctx.pathParams['username']]['avatar'] != null) {
         File(db['users'][ctx.pathParams['username']]['avatar']).deleteSync();
