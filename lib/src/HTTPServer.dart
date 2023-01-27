@@ -50,12 +50,11 @@ class HTTPServer {
 
       final form = await ctx.bodyAsFormData();
       if (form['username'] == null || form['image'] == null) return Response(statusCode: 400, body: 'Bad request');
-      StringFormField username = form['username']! as StringFormField;
+      String username = client.username;
       BinaryFileFormField image = form['image']! as BinaryFileFormField;
 
-      if (!clients.containsKey(md5.convert(utf8.encode(username.value)).toString())) return Response(statusCode: 400, body: 'User not connected');
       String ext = image.filename!.split('.').last;
-      String filename = md5.convert(utf8.encode(username.value + ';${image.filename}')).toString();
+      String filename = md5.convert(utf8.encode(username + ';${image.filename}')).toString();
       if (filename.length > 30) filename = filename.substring(0, 30);
       String path = Directory.current.path + '/images/' + filename + '.$ext';
       image.writeTo(path);
